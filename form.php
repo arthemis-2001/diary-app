@@ -16,6 +16,9 @@ if (!empty($_POST)) {
     $stmt->bindValue(':date', $date);
 
     $stmt->execute();
+
+    echo "<a href='index.php'>Back to entries</a>";
+    die();
 }
 
 ?>
