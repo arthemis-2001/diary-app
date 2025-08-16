@@ -7,13 +7,51 @@ if (!empty($_POST)) {
     $title = $_POST['title'];
     $message = $_POST['message'];
     $date = $_POST['date'];
+    $image = null;
 
-    $query = 'INSERT INTO `entries` (`title`, `message`, `date`) VALUES (:title, :message, :date)';
+    if (!empty($_FILES) && !empty($_FILES['image'])) {
+        if ($_FILES['image']['error'] === 0 && $_FILES['image']['size'] !== 0) {
+            $nameWithoutExtension = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
+            $name = preg_replace('/[^a-zA-Z0-9]/', '', $nameWithoutExtension);
+
+            $originalImage = $_FILES['image']['tmp_name'];
+            $image = $name . '-' . time() . '.jpg';
+            $destImage = __DIR__ . '/uploads/' . $image;
+
+            $imageSize = getimagesize($originalImage);
+
+            if ($imageSize !== false) {
+                [$width, $height] = $imageSize;
+
+                $maxDim = 400;
+                $scaleFactor = $maxDim / max($width, $height);
+
+                $newWidth = $width * $scaleFactor;
+                $newHeight = $height * $scaleFactor;
+
+                $img = imagecreatefromjpeg($originalImage);
+                
+                if ($img !== false) {
+                    $newImg = imagecreatetruecolor($newWidth, $newHeight);
+
+                    imagecopyresampled(
+                        $newImg, $img, 0, 0, 0, 0, 
+                        $newWidth, $newHeight, $width, $height
+                    );
+
+                    imagejpeg($newImg, $destImage);
+                }
+            }
+        }
+    }
+
+    $query = 'INSERT INTO `entries` (`title`, `message`, `date`, `image`) VALUES (:title, :message, :date, :image)';
 
     $stmt = $pdo->prepare($query);
     $stmt->bindValue(':title', $title);
     $stmt->bindValue(':message', $message);
     $stmt->bindValue(':date', $date);
+    $stmt->bindValue(':image', $image);
 
     $stmt->execute();
 
@@ -25,10 +63,14 @@ if (!empty($_POST)) {
 <?php require __DIR__ . '/views/header.view.php'; ?>
     <h1 class="main-heading">New Entry</h1>
 
-    <form method="POST" action="form.php">
+    <form method="POST" action="form.php" enctype="multipart/form-data">
         <div class="form-group">
             <label class="from-group__label" for="title">Title:</label>
             <input class="from-group__input" type="text" id="title" name="title" required />
+        </div>
+        <div class="form-group">
+            <label class="from-group__label" for="image">Image:</label>
+            <input class="from-group__input" type="file" id="image" name="image" />
         </div>
         <div class="form-group">
             <label class="from-group__label" for="date">Date:</label>

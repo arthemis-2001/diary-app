@@ -26,9 +26,11 @@ $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <h1 class="main-heading">Entries</h1>
 <?php foreach ($entries as $entry): ?>
     <div class="card">
-        <div class="card__image-container">
-            <img class="card__image" src="images/pexels-canva-studio-3153199.jpg" alt="" />
-        </div>
+        <?php if (!empty($entry['image'])): ?>
+            <div class="card__image-container">
+                <img class="card__image" src="uploads/<?= escape($entry['image']) ?>" alt="" />
+            </div>
+        <?php endif; ?>
         <div class="card__desc-container">
             <?php 
                 $dateExploded = explode('-', $entry['date']);
